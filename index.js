@@ -25,6 +25,9 @@ function deleteChildElements(parent) {
 // grab the element with the id games-container
 const gamesContainer = document.getElementById("games-container");
 
+/** Which games the filter buttons last selected ('all' | 'unfunded' | 'funded'). */
+let fundFilter = "all";
+
 // create a function that adds all data from the games array to the page
 function addGamesToPage(games) {
 
@@ -54,9 +57,35 @@ function addGamesToPage(games) {
     }
 }
 
+function gamesMatchingFundFilter() {
+    if (fundFilter === "unfunded") {
+        return GAMES_JSON.filter((game) => game.pledged < game.goal);
+    }
+    if (fundFilter === "funded") {
+        return GAMES_JSON.filter((game) => game.pledged >= game.goal);
+    }
+    return GAMES_JSON;
+}
+
+function renderGameList() {
+    const searchInput = document.getElementById("game-search");
+    const query = searchInput ? searchInput.value.trim().toLowerCase() : "";
+    let games = gamesMatchingFundFilter();
+    if (query) {
+        games = games.filter((game) => {
+            return (
+                game.name.toLowerCase().includes(query) ||
+                game.description.toLowerCase().includes(query)
+            );
+        });
+    }
+    deleteChildElements(gamesContainer);
+    addGamesToPage(games);
+}
+
 // call the function we just defined using the correct variable
 // later, we'll call this function using a different list of games
-addGamesToPage(GAMES_JSON);
+renderGameList();
 
 /*************************************************************************************
  * Challenge 4: Create the summary statistics at the top of the page displaying the
@@ -96,36 +125,20 @@ gamesCard.innerHTML = `${GAMES_JSON.length.toLocaleString()}`;
 
 // show only games that do not yet have enough funding
 function filterUnfundedOnly() {
-    deleteChildElements(gamesContainer);
-
-    // use filter() to get a list of games that have not yet met their goal
-    const unfundedGames = GAMES_JSON.filter((game) => {
-        return game.pledged < game.goal;
-    });
-
-    // use the function we previously created to add the unfunded games to the DOM
-    addGamesToPage(unfundedGames);
+    fundFilter = "unfunded";
+    renderGameList();
 }
 
 // show only games that are fully funded
 function filterFundedOnly() {
-    deleteChildElements(gamesContainer);
-
-    // use filter() to get a list of games that have met or exceeded their goal
-    const fundedGames = GAMES_JSON.filter((game) => {
-        return game.pledged >= game.goal;
-    });
-
-    // use the function we previously created to add the funded games to the DOM
-    addGamesToPage(fundedGames);
+    fundFilter = "funded";
+    renderGameList();
 }
 
 // show all games
 function showAllGames() {
-    deleteChildElements(gamesContainer);
-
-    // add all games from the JSON data to the DOM
-    addGamesToPage(GAMES_JSON);
+    fundFilter = "all";
+    renderGameList();
 }
 
 // select each button in the "Our Games" section
@@ -137,6 +150,9 @@ const allBtn = document.getElementById("all-btn");
 unfundedBtn.addEventListener("click", filterUnfundedOnly);
 fundedBtn.addEventListener("click", filterFundedOnly);
 allBtn.addEventListener("click", showAllGames);
+
+const gameSearchInput = document.getElementById("game-search");
+gameSearchInput.addEventListener("input", renderGameList);
 
 
 /*************************************************************************************
